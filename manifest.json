@@ -6,9 +6,15 @@
     "background": {
         "service_worker": "js/background.js"
     },
-    "permissions": ["storage", "activeTab", "scripting"],
+    "permissions": ["storage", "activeTab", "tabs", "scripting"],
     "action": {
         "default_popup": "popup.html"
     },
+    "content_scripts": [
+        {
+            "matches": ["*://*.twitch.tv/*"],
+            "js": ["js/test.js"]
+        }
+    ],
     "options_page": "options.html"
   }
