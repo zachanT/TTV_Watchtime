@@ -10,7 +10,7 @@
 
 let tabsOnTwitch = []; // tabId of tabs with Twitch open
 let channels = {}; // list of channels being watched and time when they began being watched
-let watchTime = {}; // watchtime in ms (maybe switch to actual DB in future)
+// let watchTime = {}; // watchtime in ms (maybe switch to actual DB in future)
 let tabIdToChannel = {}; // mapping from tabId to twitch channel
 
 async function getCurrentTab() {
@@ -40,9 +40,8 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
                 tabIdToChannel[tabId] = channel;
 
                 // Query to see if channel exists in DB
-                if(channel in watchTime) {
-                    // do something?
-                }
+                // if(channel in watchTime) {
+                // }
 
                 if(channel in channels) {
                     // If another tab is already watching this channel, record time and create a
@@ -64,16 +63,24 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 function recordTimeWatched (channel, tabId) {
     // tabsOnTwitch = tabsOnTwitch.filter(num => num != tabId);
     let sessionTime = Date.now() - channels[channel]; // Watch time in ms
-    chrome.storage.sync.get([channel], (result) => {
-        if(result[channel]) {
-            chrome.storage.sync.set({channel: (result[channel] + sessionTime)}, () => {
-                console.log("Watched " + channel + " for " + sessionTime/1000 + "sec(s)");
-            });
+    chrome.storage.sync.get(['twitchWatchTime'], (result) => {
+        let watchTime = result.twitchWatchTime;
+
+        let ind = watchTime.indexOf(channel);
+        if(ind != -1) {
+            watchTime[ind][channel] += sessionTime;
+            // chrome.storage.sync.set({channel: (result[channel] + sessionTime)}, () => {
+            //     console.log("Watched " + channel + " for " + sessionTime/1000 + "sec(s)");
+            // });
         } else {
-            chrome.storage.sync.set({channel: sessionTime}, () => {
-                console.log("Watched " + channel + " for " + sessionTime/1000 + "sec(s)");
-            });
+            watchTime.push({ channel: sessionTime });
+            // chrome.storage.sync.set({channel: sessionTime}, () => {
+            //     console.log("Watched " + channel + " for " + sessionTime/1000 + "sec(s)");
+            // });
         }
+        chrome.storage.sync.set({'twitchWatchTime': watchTime}, () => {
+            console.log("Watched " + channel + " for " + sessionTime/1000 + "sec(s)");
+        });
     });
     // if(channel in watchTime) {
     //     watchTime[channel] += sessionTime;
