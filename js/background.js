@@ -1,9 +1,8 @@
 /**
- * Basic logic from what I understand about extensions:
- * Record time when a channel is selected in Twitch
- * Not sure how to detect if the channel is changed
- *  When it does change record time and calculate watch time, store in localStorage (maybe database later)
- *  Record time of new channel
+ * Watchtime isn't being properly recorded when a tab was watching a twitch channel but switches to another twitch
+ * channel. 
+ * Seems like time is only being recorded when tab is closed.
+ * Haven't tested if you watch twitch but switch to another site.
  * 
  * Using a DB: https://stackoverflow.com/questions/5769081/connecting-to-db-from-a-chrome-extension
  */
@@ -55,18 +54,13 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
             // URL cannot be a twitch channel
             
             // If tab was watching recordWatchTime
+            let channel = tabIdToChannel[tabId];
+            recordTimeWatched(channel, tabId);
         }
         // WORRY ABOUT LATER BUT STILL NOTE:
         // if multiple tabs are watching twitch record time separately
     }
 });
-
-/*
- twitchWatchTime structured as 
- [{xqcow: 12093}, {tarik: 13213}, {lenta: 20913}, ...]
- maybe structure it as:
- [{channel: xqcow, watchTime: 12093}, ...]
-*/
 
 function recordTimeWatched (channelName, tabId) {
     // tabsOnTwitch = tabsOnTwitch.filter(num => num != tabId);
