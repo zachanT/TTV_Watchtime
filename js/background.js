@@ -20,6 +20,7 @@ async function getCurrentTab() {
 }
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+    console.log(changeInfo);
     if(changeInfo.url) {
         console.log("url changed: " + changeInfo.url);
         let url = changeInfo.url;
@@ -60,26 +61,45 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     }
 });
 
-function recordTimeWatched (channel, tabId) {
-    // tabsOnTwitch = tabsOnTwitch.filter(num => num != tabId);
-    let sessionTime = Date.now() - channels[channel]; // Watch time in ms
-    chrome.storage.sync.get(['twitchWatchTime'], (result) => {
-        let watchTime = result.twitchWatchTime;
+/*
+ twitchWatchTime structured as 
+ [{xqcow: 12093}, {tarik: 13213}, {lenta: 20913}, ...]
+ maybe structure it as:
+ [{channel: xqcow, watchTime: 12093}, ...]
+*/
 
-        let ind = watchTime.indexOf(channel);
-        if(ind != -1) {
-            watchTime[ind][channel] += sessionTime;
-            // chrome.storage.sync.set({channel: (result[channel] + sessionTime)}, () => {
-            //     console.log("Watched " + channel + " for " + sessionTime/1000 + "sec(s)");
-            // });
+function recordTimeWatched (channelName, tabId) {
+    // tabsOnTwitch = tabsOnTwitch.filter(num => num != tabId);
+    let sessionTime = Date.now() - channels[channelName]; // Watch time in ms
+    chrome.storage.sync.get(['twitchWatchTime'], (result) => {
+        let watchTimes = result.twitchWatchTime;
+
+        // Search watchTimes for channelName
+        let ind = -1;
+        if(watchTimes) {
+            for(let i = 0; i < watchTimes.length; ++i) {
+                if(watchTimes[i].channel == channelName) {
+                        ind = i;
+                        break;
+                }
+            }
         } else {
-            watchTime.push({ channel: sessionTime });
-            // chrome.storage.sync.set({channel: sessionTime}, () => {
-            //     console.log("Watched " + channel + " for " + sessionTime/1000 + "sec(s)");
-            // });
+            watchTimes = [];
         }
-        chrome.storage.sync.set({'twitchWatchTime': watchTime}, () => {
-            console.log("Watched " + channel + " for " + sessionTime/1000 + "sec(s)");
+
+        if(ind != -1) {
+            // Update watchTime for channel
+            if(watchTimes[ind].watchTime) {
+                watchTimes[ind].watchTime += sessionTime;
+            } else {
+                watchTimes[ind].watchTime = sessionTime;
+            }
+        } else {
+            // Create new entry in array for channel
+            watchTimes.push({ 'channel': channelName, 'watchTime': sessionTime });
+        }
+        chrome.storage.sync.set({'twitchWatchTime': watchTimes}, () => {
+            console.log("Watched " + channelName + " for " + sessionTime/1000 + "sec(s)");
         });
     });
     // if(channel in watchTime) {
@@ -90,7 +110,7 @@ function recordTimeWatched (channel, tabId) {
     //     });
     // }
     // Remove start time of prev session
-    delete channels[channel];
+    delete channels[channelName];
 
     // Unmap tabId to channel
     delete tabIdToChannel[tabId];
@@ -105,7 +125,7 @@ chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
     }
 })
 
-// function stuff() {
+// function getURL() {
 //     chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
 //         console.log("HELLO")
 //         console.log(tabs[0].id.url)
