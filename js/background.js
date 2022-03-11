@@ -19,8 +19,8 @@ async function getCurrentTab() {
 }
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-    console.log(changeInfo);
-    if(changeInfo.url) {
+    if(changeInfo.url) {        
+        console.log(changeInfo);
         console.log("url changed: " + changeInfo.url);
         let url = changeInfo.url;
         let regex = /https:\/\/www.twitch.tv\//;
@@ -28,11 +28,13 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
         if(ind != -1) {
             let channel = url.substr(22);
             console.log("Watching: " + channel);
-            if(channel != "" || channel != "directory") {                
+            console.log(tabsOnTwitch);
+            console.log(channels);
+            if(channel != "" && !channel.toLowerCase().includes("directory")) {                
             // If url is a twitch channel...
                 if(tabsOnTwitch.indexOf(tabId) != -1) {
                 // if current tab was just watching a channel
-                    recordTimeWatched(channel, tabId);
+                    recordTimeWatched(tabIdToChannel[tabId], tabId);
                 } else {
                     tabsOnTwitch.push(tabId);
                 }
@@ -52,10 +54,13 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
             }
         } else {
             // URL cannot be a twitch channel
-            
-            // If tab was watching recordWatchTime
+            console.log("Navigating to a site that isn't twitch");
             let channel = tabIdToChannel[tabId];
-            recordTimeWatched(channel, tabId);
+            if(channel) {
+                // If tab was watching recordWatchTime
+                recordTimeWatched(channel, tabId);
+            }
+            
         }
         // WORRY ABOUT LATER BUT STILL NOTE:
         // if multiple tabs are watching twitch record time separately
@@ -131,4 +136,6 @@ chrome.runtime.onInstalled.addListener(() => {
     // chrome.tabs.create({
     //     url: 'onboarding.html'
     // });
+
+    chrome.storage.sync.remove("twitchWatchTime", () => console.log("removed twitchWatchTime"));
 });

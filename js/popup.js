@@ -1,16 +1,16 @@
 window.onload = () => {
     chrome.storage.sync.get(['twitchWatchTime'], (result) => {
         let watchTimes = result.twitchWatchTime;
+        let channelsDiv = document.getElementById("channels");
+
         if(!watchTimes) {
-            watchTimes = [];
-            watchTimes.push({'channel':'xQcOw', 'watchTime': 9000});
+            channelsDiv.append("Nothing to show yet. Start watching some Twitch! :)");
+            return;
         }
 
         console.log(result);
 
         watchTimes.sort((a,b) => (a.watchTime < b.watchTime) ? 1 : -1);
-
-        let channelsDiv = document.getElementById("channels");
 
         watchTimes.forEach(channelTime => {
             let channelDiv = document.createElement("div");
