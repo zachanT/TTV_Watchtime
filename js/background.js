@@ -74,6 +74,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
                 let channel = tabIdToChannel[tabId];
                 if(channel) {
                     // If tab was watching recordWatchTime
+                    tabsOnTwitch = tabsOnTwitch.filter(num => num != tabId);
                     recordTimeWatched(channel, tabId);
                 }                
             }
@@ -97,8 +98,8 @@ async function recordTimeWatched (channelName, tabId) {
         if(watchTimes) {
             for(let i = 0; i < watchTimes.length; ++i) {
                 if(watchTimes[i].channel == channelName) {
-                        ind = i;
-                        break;
+                    ind = i;
+                    break;
                 }
             }
         } else {
