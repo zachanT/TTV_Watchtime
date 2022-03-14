@@ -1,8 +1,14 @@
 {
     "name": "Twitch Watchtime",
-    "description": "Track hours spent watching certain streamers!",
+    "description": "Track hours spent watching your favorite streamers!",
     "version": "1.0",
     "manifest_version": 3,
+    "icons": {
+        "16": "icons/16x16.png",
+        "48": "icons/48x48.png",
+        "128": "icons/icon128.png"
+    },
+
     "background": {
         "service_worker": "js/background.js"
     },

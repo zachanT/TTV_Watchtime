@@ -7,6 +7,9 @@
  * Using a DB: https://stackoverflow.com/questions/5769081/connecting-to-db-from-a-chrome-extension
  */
 
+// Think i need to store this in localStorage or something because it probably gets wiped when the serviceworker
+// goes inactive.
+// CORRECTION: I DEFINITELY need to store it, this gets reset
 let tabsOnTwitch = []; // tabId of tabs with Twitch open
 let channels = {}; // list of channels being watched and time when they began being watched
 // let watchTime = {}; // watchtime in ms (maybe switch to actual DB in future)
@@ -27,10 +30,19 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
         let ind = url.search(regex);
         if(ind != -1) {
             let channel = url.substr(22);
+
+            // Retrieve data from localStorate 
+            chrome.storage.local.get(['tabsOnTwitch', 'channelsBeingWatched', 'tabIdToChannel'], (data) => {
+                tabsOnTwitch = data.tabsOnTwitch;
+                channels = data.channelsBeingWatched;
+                tabIdToChannel = data.tabIdToChannel;
+            });            
+
             console.log("Watching: " + channel);
             console.log(tabsOnTwitch);
             console.log(channels);
-            if(channel != "" && !channel.toLowerCase().includes("directory")) {                
+            // NEED BETTER WAY TO DO THIS, (IF TWITCH CHANNEL CONTAINS THESE WORDS)
+            if(channel != "" && !channel.toLowerCase().includes("directory") && !channel.toLowerCase().includes("videos")) {                
             // If url is a twitch channel...
                 if(tabsOnTwitch.indexOf(tabId) != -1) {
                 // if current tab was just watching a channel
@@ -52,7 +64,13 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
                 }
                 channels[channel] = Date.now();
             }
+
+            chrome.storage.local.set({'tabsOnTwitch': tabsOnTwitch}, () => console.log("Updated tabsOnTwitch"));
         } else {
+            chrome.storage.local.get(['channelsBeingWatched', 'tabIdToChannel'], (data) => {
+                channels = data.channelsBeingWatched;
+                tabIdToChannel = data.tabIdToChannel;
+            });
             // URL cannot be a twitch channel
             console.log("Navigating to a site that isn't twitch");
             let channel = tabIdToChannel[tabId];
@@ -64,6 +82,9 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
         }
         // WORRY ABOUT LATER BUT STILL NOTE:
         // if multiple tabs are watching twitch record time separately
+
+        chrome.storage.local.set({'channelsBeingWatched': channels}, () => console.log("Updated channelsBeingWatched"));
+        chrome.storage.local.set({'tabIdToChannel': tabIdToChannel}, () => console.log("Updated tabIdToChannel"));
     }
 });
 
@@ -101,14 +122,6 @@ function recordTimeWatched (channelName, tabId) {
             console.log("Watched " + channelName + " for " + sessionTime/1000 + "sec(s)");
         });
     });
-    // if(channel in watchTime) {
-    //     watchTime[channel] += sessionTime;
-    // } else {        
-    //     chrome.storage.sync.set({channel: sessionTime}, () => {
-    //         console.log("Watched " + channel + " for " + sessionTime/1000 + "sec(s)");
-    //     });
-    // }
-    // Remove start time of prev session
     delete channels[channelName];
 
     // Unmap tabId to channel
@@ -116,11 +129,20 @@ function recordTimeWatched (channelName, tabId) {
 }
 
 chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
+    chrome.storage.local.get(['tabsOnTwitch', 'channelsBeingWatched', 'tabIdToChannel'], (data) => {
+        tabsOnTwitch = data.tabsOnTwitch;
+        channels = data.channelsBeingWatched;
+        tabIdToChannel = data.tabIdToChannel;
+    });
     if(tabsOnTwitch.indexOf(tabId) != -1) {
         console.log(tabId + " was watching twitch");
         let channel = tabIdToChannel[tabId];
         recordTimeWatched(channel, tabId);
         tabsOnTwitch = tabsOnTwitch.filter(num => num != tabId); // remove tabId from tabsOnTwitch
+
+        chrome.storage.local.set({'tabsOnTwitch': tabsOnTwitch}, () => console.log("Updated tabsOnTwitch"));
+        chrome.storage.local.set({'channelsBeingWatched': channels}, () => console.log("Updated channelsBeingWatched"));
+        chrome.storage.local.set({'tabIdToChannel': tabIdToChannel}, () => console.log("Updated tabIdToChannel"));
     }
 })
 
@@ -131,11 +153,16 @@ chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
 //     });
 // }
 
-chrome.runtime.onInstalled.addListener(() => {
+chrome.runtime.onInstalled.addListener((details) => {
     //On boarding stuff when user installs extension
     // chrome.tabs.create({
     //     url: 'onboarding.html'
     // });
 
-    chrome.storage.sync.remove("twitchWatchTime", () => console.log("removed twitchWatchTime"));
+    // chrome.storage.sync.remove("twitchWatchTime", () => console.log("removed twitchWatchTime"));
+    if(details.reason === chrome.runtime.OnInstalledReason.INSTALL) {
+        chrome.storage.local.set({'tabsOnTwitch': []}, () => console.log("Initialized tabsOnTwitch"));
+        chrome.storage.local.set({'channelsBeingWatched': {}}, () => console.log("Initialized channelsBeingWatched"));
+        chrome.storage.local.set({'tabIdToChannel': {}}, () => console.log("Initialized tabIdToChannel"));
+    }
 });
