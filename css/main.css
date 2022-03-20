@@ -1,26 +1,39 @@
 body {
-    background-color: rgb(36, 36, 36);
-    color: #f8f8f8;
-    font-family: sans-serif;
-    font-size: 16px;
-    width: 400px;
+  background-color: #242424;
+  color: #f8f8f8;
+  font-family: sans-serif;
+  font-size: 18px;
+  width: 400px;
 }
 
 .main {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
 }
 
 .channels {
-    display: flex;
-    flex-direction: column;
+  display: flex;
+  flex-direction: column;
 }
 
 .channel {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    border-style: solid;
-    border-width: 1px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-style: solid;
+  border-width: 1px;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #242424;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #424242;
+  border-radius: 10px;
 }
